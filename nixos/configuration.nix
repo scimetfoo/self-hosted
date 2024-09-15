@@ -8,7 +8,7 @@
       ./disko-config.nix
     ];
 
-  sops.defaultSopsFile = ../../secrets/secrets.yaml;
+  sops.defaultSopsFile = ../secrets/secrets.yaml;
   sops.secrets.nixos-password.neededForUsers = true;
   sops.defaultSopsFormat = "yaml";
   sops.age.keyFile = "/home/nixos/.config/sops/age/keys.txt";

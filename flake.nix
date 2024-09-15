@@ -22,12 +22,14 @@
     nixosConfigurations = {
       personal-server = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
+	specialArgs = { inherit inputs; };
         modules = [
-	  ./zsh.nix
-          ./vm/hetzner/configuration.nix
+	  ./user.nix
+          ./nixos/configuration.nix
 	  inputs.disko.nixosModules.disko
 	  inputs.sops-nix.nixosModules.sops
-        ];
+	  inputs.actual-nix.nixosModules.default
+	];
       };
     };
   };

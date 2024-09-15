@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   environment.systemPackages = with pkgs; [
@@ -6,7 +6,9 @@
     zsh
     fzf
     bat
+    ripgrep
     sops
+    inputs.actual-nix.packages."${pkgs.system}".actual-server
   ];
 
   users.defaultUserShell = pkgs.zsh;
