@@ -42,13 +42,9 @@
 
   services.actual = {
     enable = true;
-    hostname = "0.0.0.0";
+    hostname = "127.0.0.1";
     port = 5006;
   };
-
-  systemd.tmpfiles.rules = [
-    "d /var/lib/actual 0755 actual actual"
-  ];
 
   systemd.services.tailscale-autoconnect = {
     description = "Automatic connection to Tailscale";
@@ -74,8 +70,87 @@
     enable = true;
     trustedInterfaces = [ "tailscale0" ];
     allowedUDPPorts = [ config.services.tailscale.port ];
-    allowedTCPPorts = [ 22 5006 ];
+    allowedTCPPorts = [ 22 443 ];
   };
 
+  systemd.tmpfiles.rules = [
+    "d /var/lib/actual 0755 actual actual"
+    "d /etc/ssl/tailscale 0755 root root"
+    "f /etc/ssl/tailscale/key.pem 0640 root ssl-cert - -"
+    "f /etc/ssl/tailscale/cert.pem 0644 root root - -"
+  ];
+
+  users.groups.ssl-cert = { };
+
+  users.users.nginx = {
+    isSystemUser = true;
+    extraGroups = [ "ssl-cert" ];  
+  };
+
+  systemd.services.tailscale-cert = {
+    description = "Obtain TLS certificate from Tailscale";
+    after = [ "network-online.target" "tailscale.service" ];
+    wants = [ "network-online.target" "tailscale.service" ];
+    before = [ "nginx.service" ];  # Ensure this runs before nginx
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      ExecStart = ''
+        ${pkgs.tailscale}/bin/tailscale cert \
+          --cert-file /etc/ssl/tailscale/cert.pem \
+          --key-file /etc/ssl/tailscale/key.pem \
+	  nixos.tailcf19f1.ts.net
+      '';
+    };
+    wantedBy = [ "multi-user.target" ];
+  };
+
+  systemd.timers.tailscale-cert-renewal = {
+    description = "Renew Tailscale TLS certificate";
+    wantedBy = [ "timers.target" ];
+    timerConfig.OnCalendar = "weekly";
+    timerConfig.Persistent = true;
+  };
+
+  services.nginx = {
+    enable = true;
+    recommendedTlsSettings = true;
+    recommendedOptimisation = true;
+    recommendedGzipSettings = true;
+
+    virtualHosts."actual" = {
+      onlySSL = true;
+      sslCertificate = "/etc/ssl/tailscale/cert.pem";
+      sslCertificateKey = "/etc/ssl/tailscale/key.pem";
+      serverName = "nixos.tailcf19f1.ts.net";
+      extraConfig = ''
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      '';
+      locations."/user-1/" = {
+        proxyPass = "http://127.0.0.1:5006";
+        proxyWebsockets = true;
+        extraConfig = ''
+          rewrite ^/user-1/(.*) /$1 break;
+        '';
+      };
+
+      locations."/user-2/" = {
+        proxyPass = "http://127.0.0.1:5007";
+        proxyWebsockets = true;
+        extraConfig = ''
+          rewrite ^/user-2/(.*) /$1 break;
+        '';
+      };
+    };
+  };
 }
+
+
+
 
