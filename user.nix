@@ -42,7 +42,7 @@
 
   services.actual = {
     enable = true;
-    hostname = "127.0.0.1";
+    hostname = "0.0.0.0";
     port = 5006;
   };
 
@@ -52,13 +52,10 @@
 
   systemd.services.tailscale-autoconnect = {
     description = "Automatic connection to Tailscale";
-
     after = [ "network-pre.target" "tailscale.service" ];
     wants = [ "network-pre.target" "tailscale.service" ];
     wantedBy = [ "multi-user.target" ];
-
     serviceConfig.Type = "oneshot";
-
     script = with pkgs; ''
       sleep 2
 
@@ -71,6 +68,13 @@
       # otherwise authenticate with tailscale
       ${tailscale}/bin/tailscale up -authkey ${config.sops.secrets.tailscale-auth-key.path}
     '';
+  };
+
+  networking.firewall = {
+    enable = true;
+    trustedInterfaces = [ "tailscale0" ];
+    allowedUDPPorts = [ config.services.tailscale.port ];
+    allowedTCPPorts = [ 22 5006 ];
   };
 
 }
