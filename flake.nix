@@ -24,7 +24,7 @@
         system = "x86_64-linux";
 	specialArgs = { inherit inputs; };
         modules = [
-	  ./user.nix
+	  ./modules/core.nix
           ./nixos/configuration.nix
 	  inputs.disko.nixosModules.disko
 	  inputs.sops-nix.nixosModules.sops
