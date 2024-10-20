@@ -11,6 +11,7 @@
     ./caddy.nix
     ./actual.nix
     ./dns-server.nix
+    ./spliit.nix
   ];
 
   networking.firewall = {

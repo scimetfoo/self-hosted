@@ -18,5 +18,10 @@
     jq
     caddy
     lazygit
+    docker-compose
+    docker-compose 
+    nodejs-18_x
+    bash
+    coreutils
   ];
 }

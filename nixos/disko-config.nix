@@ -15,7 +15,7 @@
             ESP = {
               size = "512M";
               type = "EF00";
-	      label = "disk-main-ESP";  # Add labels to match with configuration.nix
+	      label = "disk-main-ESP";  
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -24,7 +24,7 @@
             };
             root = {
               size = "100%";
-	      label = "disk-main-root";  # Add labels to match with configuration.nix
+	      label = "disk-main-root";
               content = {
                 type = "filesystem";
                 format = "ext4";

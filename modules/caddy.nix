@@ -21,6 +21,16 @@
           }
         '';
       };
+      "spliit.murtazaa.com" = {
+        extraConfig = ''
+          tls internal
+          reverse_proxy localhost:3000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+          }
+        '';
+      };
+
     };
   };
  }
