@@ -8,24 +8,17 @@
     ./docker.nix
     ./sops.nix
     ./tailscale.nix
-    ./nginx.nix
+    ./caddy.nix
     ./actual.nix
+    ./dns-server.nix
   ];
 
   networking.firewall = {
     enable = true;
     trustedInterfaces = [ "tailscale0" ];
     allowedUDPPorts = [ config.services.tailscale.port ];
-    allowedTCPPorts = [ 22 443 ];
+    allowedTCPPorts = [ 22 443 80 ];
   };
 
-  systemd.tmpfiles.rules = [
-    "d /etc/ssl/tailscale 0755 root root"
-    "f /etc/ssl/tailscale/key.pem 0640 root ssl-cert - -"
-    "f /etc/ssl/tailscale/cert.pem 0644 root root - -"
-    "d /var/www/actual 0755 nginx nginx"
-  ];
-
-  users.groups.ssl-cert = { };
 }
 

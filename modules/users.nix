@@ -8,9 +8,5 @@
     shell = pkgs.zsh;
   };
 
-  users.users.nginx = {
-    isSystemUser = true;
-    extraGroups = [ "ssl-cert" ];
-  };
 }
 

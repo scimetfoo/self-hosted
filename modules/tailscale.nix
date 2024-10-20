@@ -1,43 +1,47 @@
-{ config, pkgs, ... }:
-
+{ config, pkgs, lib, ... }:
 {
-  services.tailscale.enable = true;
+ config = {
+    services.tailscale = {
+      enable = true;
+      useRoutingFeatures = "server";
+      extraUpFlags = [
+      ];
+    };
 
-  systemd.services.tailscale-autoconnect = {
-    description = "Automatic connection to Tailscale";
-    after = [ "network-pre.target" "tailscale.service" ];
-    wants = [ "network-pre.target" "tailscale.service" ];
-    wantedBy = [ "multi-user.target" ];
-    serviceConfig.Type = "oneshot";
-    script = with pkgs; ''
-      sleep 2
+    systemd.services.tailscaled = {
+      after = [ "technitium-dns-server.service" ];
+      requires = [ "technitium-dns-server.service" ];
+    };
 
-      # check if already authenticated to tailscale
-      status="$(${tailscale}/bin/tailscale status -json | ${jq}/bin/jq -r .BackendState)"
-      if [ $status = "Running" ]; then # if so, then do nothing
-        exit 0
-      fi
-
-      # otherwise authenticate with tailscale
-      ${tailscale}/bin/tailscale up -authkey ${config.sops.secrets.tailscale-auth-key.path}
-    '';
-  };
-
-  systemd.services.tailscale-cert = {
-    description = "Obtain TLS certificate from Tailscale";
-    after = [ "network-online.target" "tailscale.service" ];
-    wants = [ "network-online.target" "tailscale.service" ];
-    before = [ "nginx.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      RemainAfterExit = true;
-      ExecStart = ''
-        ${pkgs.tailscale}/bin/tailscale cert \
-          --cert-file /etc/ssl/tailscale/cert.pem \
-          --key-file /etc/ssl/tailscale/key.pem \
-          nixos.tailcf19f1.ts.net
+    systemd.services.tailscale-autoconnect = {
+      description = "Automatic connection to Tailscale";
+      after = [ "network-pre.target" "tailscale.service" "technitium-dns-server.service" ];
+      wants = [ "network-pre.target" "tailscale.service" "technitium-dns-server.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig.Type = "oneshot";
+      script = with pkgs; ''
+        sleep 2
+        status="$(${tailscale}/bin/tailscale status -json | ${jq}/bin/jq -r .BackendState)"
+        if [ $status = "Running" ]; then exit 0; fi
+        ${pkgs.tailscale}/bin/tailscale up \
+          --auth-key file:${config.sops.secrets.tailscale-auth-key.path} \
+          --hostname=nixos \
+          --advertise-routes=100.65.47.114/32 \
+        ${pkgs.tailscale}/bin/tailscale set \
+          --dns=100.65.47.114 \
+          --search-domain=murtazaa.com
       '';
     };
-    wantedBy = [ "multi-user.target" ];
+
+    networking = {
+      nameservers = [ "127.0.0.1" "1.1.1.1" ];
+      dhcpcd.extraConfig = "nohook resolv.conf";
+      resolvconf.enable = false;
+    };
+
+    environment.etc."resolv.conf".text = ''
+      nameserver 127.0.0.1
+      nameserver 1.1.1.1
+    '';
   };
 }

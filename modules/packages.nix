@@ -1,5 +1,4 @@
 { config, pkgs, inputs, ... }:
-
 {
   environment.systemPackages = with pkgs; [
     git
@@ -14,6 +13,10 @@
     inputs.actual-nix.packages."${pkgs.system}".actual-server
     tailscale
     docker
+    technitium-dns-server
+    openssl
+    jq
+    caddy
+    lazygit
   ];
 }
-
