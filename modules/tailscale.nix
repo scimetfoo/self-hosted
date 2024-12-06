@@ -3,6 +3,7 @@
  config = {
     services.tailscale = {
       enable = true;
+      package = pkgs.tailscale;
       useRoutingFeatures = "server";
       extraUpFlags = [
       ];

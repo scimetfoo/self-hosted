@@ -23,5 +23,6 @@
     nodejs-18_x
     bash
     coreutils
+    babashka
   ];
 }
